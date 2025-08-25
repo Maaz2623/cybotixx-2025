@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/db";
 import { participants } from "@/lib/db/schema";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
 export const getParticipantsAction = async () => {
@@ -34,7 +35,7 @@ export const enrollForAnEventAction = async (eventId: number) => {
 
     if (!cur_user) return { ok: false, error: "not-auth" };
 
-    if (!cur_user.roll_number) return { ok: false, error: "roll-not-found" };
+    if ((cur_user.roll_number === "#NUll#" || cur_user.phone_number === "#NUll#")) return { ok: false, error: "roll-not-found" };
 
     const res = await db
       .insert(participants)
@@ -43,6 +44,9 @@ export const enrollForAnEventAction = async (eventId: number) => {
         userId: cur_user.id,
       })
       .returning();
+
+    revalidatePath(`/events`);
+    revalidatePath(`/events/${eventId}`);
 
     return { ok: res ? true : false, error: res ? "" : "unknown" };
   } catch {
